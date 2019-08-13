@@ -1,0 +1,8 @@
+# - src: https://005dd5cdef620338a3456ad419f12ef5a9bddc9f@github.com/GrassShrimp/etcd_ansible.git
+#   name: etcd
+- src: https://005dd5cdef620338a3456ad419f12ef5a9bddc9f@github.com/GrassShrimp/keepalived_ansible.git
+  name: keepalived
+- src: https://005dd5cdef620338a3456ad419f12ef5a9bddc9f@github.com/GrassShrimp/haproxy_ansible.git
+  name: haproxy
+- src: https://005dd5cdef620338a3456ad419f12ef5a9bddc9f@github.com/GrassShrimp/kubeadm_ansible.git
+  name: kubeadm

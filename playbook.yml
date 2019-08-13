@@ -1,0 +1,55 @@
+# - name: deploy etcd
+#   hosts: etcd_cluster
+#   roles:
+#     - role: etcd
+#       hosts:
+#         - { hostname: 'etcd-1', ip_address: '172.28.128.3' }
+#         - { hostname: 'etcd-2', ip_address: '172.28.128.4' }
+#         - { hostname: 'etcd-3', ip_address: '172.28.128.5' }
+- name: deploy keepalived and haproxy
+  hosts: master_cluster
+  roles:
+    - role: keepalived
+      virtual_ipaddress: '192.168.68.100'
+      hosts:
+        - { hostname: 'master-1', ip_address: '172.28.128.13', priority: 250, state: 'master', interface: 'enp0s9' }
+        - { hostname: 'master-2', ip_address: '172.28.128.14', priority: 200, state: 'backup', interface: 'enp0s9' }
+        - { hostname: 'master-3', ip_address: '172.28.128.15', priority: 150, state: 'backup', interface: 'enp0s9' }
+    - role: haproxy
+      frontend:
+        name: 'kubernetes-apiserver'
+        bind_port: 16443
+      backend:
+        name: 'kubernetes-apiserver'
+        services:
+          - { hostname: 'master-1', ip_address: '172.28.128.13', port: 6443 }
+          - { hostname: 'master-2', ip_address: '172.28.128.14', port: 6443 }
+          - { hostname: 'master-3', ip_address: '172.28.128.15', port: 6443 }
+- name: deploy kubeadm master
+  hosts: master-1
+  roles:
+  - role: kubeadm
+    controlPlaneEndpoint:
+      host: '192.168.68.100'
+      port: 16443
+    default_user: vagrant
+    hosts: 
+      - { hostname: 'master-1', ip_address: '172.28.128.13', type: 'master-init' }
+    # etcd_cluster:
+    #   hosts:
+    #     - { ip_address: '172.28.128.3', port: 2379 }
+    #     - { ip_address: '172.28.128.4', port: 2379 }
+    #     - { ip_address: '172.28.128.5', port: 2379 }
+    #   caFile: "{{ playbook_dir }}/ssl/etcd-root-ca.pem"
+    #   certFile: "{{ playbook_dir }}/ssl/client.pem"
+    #   keyFile: "{{ playbook_dir }}/ssl/client-key.pem"
+- name: deploy kubeadm other masters
+  hosts: master-2,master-3
+  serial: 1
+  roles:
+  - role: kubeadm
+    default_user: vagrant
+    hosts: 
+      - { hostname: 'master-2', ip_address: '172.28.128.14', type: 'master-join' }
+      - { hostname: 'master-3', ip_address: '172.28.128.15', type: 'master-join' }
+      
